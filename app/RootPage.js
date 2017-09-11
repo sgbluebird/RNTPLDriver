@@ -4,10 +4,17 @@
  *    2. 处理Android返回键事件处理
  */
 import React, {Component} from 'react';
-import {StatusBar, StyleSheet, View, BackHandler, Platform} from 'react-native';
+import {
+    StatusBar, StyleSheet, View, BackHandler, Platform, DeviceEventEmitter,
+    InteractionManager,
+} from 'react-native';
 import {Navigator} from 'react-native-deprecated-custom-components';
 import MainPage from './pages/MainPage';
 import {showToast} from './comp/CommonComp';
+import SideMenu from 'react-native-side-menu';
+import LeftMenuContainer from './containers/LeftMenuContainer';
+import Common from './comp/common';
+
 class RootPage extends Component {
 
     static childContextTypes = {
@@ -17,7 +24,13 @@ class RootPage extends Component {
 
     constructor(props) {
         super(props);
-        this.backButtonListeners = ([]: Array<() => boolean>);
+        this.backButtonListeners = ([]
+    :
+        Array < ()
+    =>
+        boolean >
+    )
+        ;
         this.onBack = this._onBack.bind(this);
         this.addBackButtonListener = this._addBackButtonListener.bind(this);
         this.removeBackButtonListener = this._removeBackButtonListener.bind(this);
@@ -104,9 +117,76 @@ class RootPage extends Component {
         return <MainPage navigator={navigator} {...route} />;
     }
 }
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
 });
-export default RootPage;
+
+class Application extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            isOpen: false,
+            openMenuOffset: 0,
+        };
+    }
+
+    componentDidMount() {
+        DeviceEventEmitter.addListener('CloseOrOpen', (value) => {
+            this.setState({
+                isOpen: value,
+                openMenuOffset: Common.window.width - 100,
+            })
+        });
+        DeviceEventEmitter.addListener('ClickRow', (data) => {
+            this.setState({
+                isOpen: data.value,
+            })
+            // TODO: 点击menu中的cell时，在主界面刷新
+            InteractionManager.runAfterInteractions(() => {
+                DeviceEventEmitter.emit('PushToNextPage', data.month_type);
+            });
+        });
+
+    }
+
+    componentWillUnmount() {
+        DeviceEventEmitter.removeAllListeners('CloseOrOpen');
+    }
+
+    _closeOrOpenRight() {
+
+    }
+
+    render() {
+        const menu = <Navigator
+            initialRoute={{name: 'LeftMenuContainer', component: LeftMenuContainer}}
+            configureScene={(route) => {
+                if (route.sceneConfig) {
+                    return route.sceneConfig;
+                }
+                return Navigator.SceneConfigs.FloatFromRight;
+            }}
+            renderScene={(route, navigator) => {
+                let Component = route.component;
+                return (
+                    <Component navigator={navigator} route={route} {...route.passProps} />
+                )
+            }}
+        />
+        return (
+            <SideMenu menu={menu}
+                      isOpen={this.state.isOpen}
+                      openMenuOffset={Common.window.width - 100}
+                      edgeHitWidth={300}
+                      menuPosition={'left'}//或 'rightleft'
+            >
+                <RootPage/>
+            </SideMenu>
+        );
+    }
+}
+
+export default Application;

@@ -9,13 +9,26 @@ import {
     AppRegistry,
     StyleSheet,
     Text,
-    View
+    View,
+    DeviceEventEmitter,
+    InteractionManager
 } from 'react-native';
-
+import HeaderView from '../comp/HeaderView';
 export default class TPLDriver extends Component {
+    // TODO: 点击导航左侧Menu按钮时，打开或者关闭左侧列表
+    _closeOrOpneLeftMenu() {
+        InteractionManager.runAfterInteractions(() => {
+            DeviceEventEmitter.emit('CloseOrOpen', true);
+        });
+
+    }
     render() {
         return (
             <View style={styles.container}>
+                <HeaderView
+                    titleView='消息'
+                    leftMenu='navicon'
+                    leftMenuAction={this._closeOrOpneLeftMenu.bind(this)}/>
                 <Text style={styles.welcome}>
                     Welcome to React Native! --- Mine
                 </Text>
@@ -34,8 +47,6 @@ export default class TPLDriver extends Component {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
         backgroundColor: '#F5FCFF',
     },
     welcome: {
